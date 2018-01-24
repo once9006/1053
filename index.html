@@ -1,0 +1,344 @@
+<html>
+<head>
+    <title>image map tool</title>
+
+<script>
+<!--
+isIE=document.all;
+isNN=!document.all&&document.getElementById;
+isHot=false;
+var MovableItem
+var maxTiles=100
+var moveObject=new Array(maxTiles)
+var ActiveSwatch
+//------------------
+// functions
+//------------------ 
+
+
+function startMove(e){
+    if (!MovableItem){return;}
+    canvas=isIE ? "BODY" : "HTML";
+        activeItem=isIE ? event.srcElement : e.target;  
+        offsetx=isIE ? event.clientX : e.clientX;
+        offsety=isIE ? event.clientY : e.clientY;
+        lastX=parseInt(MovableItem.style.left);
+        lastY=parseInt(MovableItem.style.top);
+        lastW=parseInt(MovableItem.style.width);
+        lastH=parseInt(MovableItem.style.height);
+    if (offsetx+scrollAmt[0]>=(MovableItem.parentNode.offsetLeft+parseInt(MovableItem.style.left)+(MovableItem.offsetWidth*.98))|| offsety+scrollAmt[1]>=(MovableItem.parentNode.offsetTop+parseInt(MovableItem.style.top)+(MovableItem.offsetHeight*.98)) ){edge=true; MovableItem.style.cursor="se-resize"} else{edge=false;MovableItem.style.cursor="move"}
+    moveEnabled=true;
+    document.onmousemove=moveIt;
+}
+
+
+function moveIt(e){
+  if (!moveEnabled||!MovableItem) return;
+    // display info during testing
+    MovableItem.innerHTML='<span style="position:absolute; left:0px; top:0px;">&nbsp;'+MovableItem.offsetLeft+', '+MovableItem.offsetTop+' <br>&nbsp;'+
+        MovableItem.offsetWidth+', '+MovableItem.offsetHeight+' <br>'+
+        '&nbsp;<b>'+(parseInt(MovableItem.id.replace('popup',''))+1)+'</b>'
+        //moveObject[0].style.zIndex+' '+moveObject[1].style.zIndex+' '+moveObject[2].style.zIndex+' '+moveObject[3].style.zIndex+'</span>'
+    if (edge){
+          MovableItem.style.width=isIE ? event.clientX-offsetx +lastW : e.clientX-offsetx+lastW; 
+          MovableItem.style.height=isIE ? event.clientY-offsety +lastH : e.clientY-offsety+lastH; 
+        return false;
+      } else{
+          MovableItem.style.left=isIE ? lastX+event.clientX-offsetx : lastX+e.clientX-offsetx; 
+          MovableItem.style.top=isIE ? lastY+event.clientY-offsety : lastY+e.clientY-offsety;
+          return false;
+    }  
+}
+
+
+function poplayer(topObject){
+  if (!topObject) {return;}
+    for (var i=0; i<moveObject.length; i++){
+        moveObject[i].style.borderColor='silver'
+        if (moveObject[i].style.zIndex>topObject.style.zIndex-1 && moveObject[i]!=topObject)
+        {moveObject[i].style.zIndex=moveObject[i].style.zIndex-1}
+    }
+       topObject.style.zIndex=moveObject.length-1
+    topObject.style.borderColor='black'
+    ActiveSwatch=topObject
+    showLink(parseInt(ActiveSwatch.id.replace('popup','')))
+
+}
+
+function test(obj, X, Y){
+    scrollAmt=puGetScrollXY(); //0 is X and 1 is Y
+    //alert(X+scrollAmt[0]+' '+(obj.parentNode.offsetLeft+parseInt(obj.style.left)+(obj.offsetWidth*.98)) )
+    //alert(obj.style.left+' '+obj.offsetWidth+' '+X+'  \n'+obj.style.top+' '+obj.offsetHeight+' '+Y+' '+obj.parentNode.offsetTop+' '+scrollAmt[1])
+    if (X+scrollAmt[0]>=(obj.parentNode.offsetLeft+parseInt(obj.style.left)+(obj.offsetWidth*.98)) || Y+scrollAmt[1]>=(obj.parentNode.offsetTop+parseInt(obj.style.top)+(obj.offsetHeight*.98)) ) {obj.style.cursor="se-resize"} else{obj.style.cursor="move"}
+}
+
+function createTile(){
+    // when user clicks the deck, deal out a new tile
+    for (var i=0; i<maxTiles; i++){
+        if (moveObject[i].style.visibility=="hidden"){
+            moveObject[i].style.width=100
+            moveObject[i].style.height=80
+            moveObject[i].style.left=-10
+            moveObject[i].style.top=-10
+            moveObject[i].style.visibility="visible"
+            moveObject[i].style.display="block"
+            poplayer(moveObject[i])
+            showLink(i)
+        return
+        }
+        
+    }
+}
+
+function showLink(itm){
+    for (var i=0; i<maxTiles; i++){
+    document.getElementById('linker'+i).style.visibility='hidden'
+    document.getElementById('title'+i).style.visibility='hidden'
+    document.getElementById('linker'+i).style.display='none'
+    document.getElementById('title'+i).style.display='none'
+    }
+    document.getElementById('linker'+itm).style.visibility='visible'
+    document.getElementById('title'+itm).style.visibility='visible'
+    document.getElementById('linker'+itm).style.display='block'
+    document.getElementById('title'+itm).style.display='block'
+}
+
+function killTile(){
+    if (!ActiveSwatch){return}
+    ActiveSwatch.style.visibility="hidden"
+    ActiveSwatch.style.display="none"
+    document.getElementById('linker'+parseInt(ActiveSwatch.id.replace('popup',''))).value=''
+    document.getElementById('title'+parseInt(ActiveSwatch.id.replace('popup',''))).value=''
+    ActiveSwatch=null
+}
+
+
+function makeWorkspace(){
+    linklist=""
+    workspace='<img style="position:relative" id=mapimage galleryimg=false src="https://cdn.pixabay.com/photo/2017/06/12/13/53/follow-us-2395640__340.jpg">'
+
+    for (var i=0; i<maxTiles; i++){
+        linklist=linklist+'<input class=links id=linker'+i+' type=text value="" >'
+        linklist=linklist+'<input class=alts id=title'+i+' type=text value="" >'
+        workspace=workspace+'<div class=tile id=popup'+i+' style="left:'+(i*10)+'px; top:'+(i*10)+'px; '+
+        ' width:100px; height:80px;  z-Index:'+i+'; visibility:hidden;" '+
+        ' title="'+(i+1)+'. drag to move or resize" onSelectStart="return false" '+
+        ' onmousedown="MovableItem=this; poplayer(this); return false" '+
+        ' onMouseover="isHot=true;  " '+
+        ' onMousemove="test(this, event.clientX, event.clientY ) " '+
+        ' onMouseout ="isHot=false"'+
+        ' >&nbsp;hotspot '+(i+1)+'&nbsp;</div>'
+    }
+
+    document.getElementById('linkbox').innerHTML=linklist
+    document.getElementById('workSpace').innerHTML=workspace
+
+
+}
+
+function loadImage(){
+    document.getElementById('mapimage').src=document.getElementById('imageInput').value
+    a=setTimeout("resizeImage()",500)
+    
+}
+function resizeImage(){
+    document.getElementById('mapimage').parentNode.style.width=document.getElementById('mapimage').offsetWidth
+    document.getElementById('mapimage').parentNode.style.height=document.getElementById('mapimage').offsetHeight
+}
+
+ 
+
+function makeMap(){
+    var key=Math.round(Math.random()*100)
+    img=document.getElementById('mapimage')
+    // removed the height as it made image disappear
+    mapSource='<img src="'+img.src+'" width="'+img.offsetWidth+'" border="0" usemap="#imap_'+key+'" >'
+    mapSource=mapSource+'\n<map id="imap_'+key+'" name="imap_'+key+'" >\n'
+    var validMap=false
+    for (var i=0; i<maxTiles; i++){
+        if (moveObject[i].style.visibility=='visible'){
+            mapSource=mapSource+
+            '  <area shape="rect" '+ 
+            'coords="'+moveObject[i].offsetLeft+','+moveObject[i].offsetTop+','+(moveObject[i].offsetLeft+moveObject[i].offsetWidth)+','+(moveObject[i].offsetTop+moveObject[i].offsetHeight)+'" '+
+            'alt="'+document.getElementById('title'+i).value+'" '+
+            'title="'+document.getElementById('title'+i).value+'" '+
+            'href="'+document.getElementById('linker'+i).value+'">\n'
+        validMap=true
+        }
+    }
+    mapSource=mapSource+'</map>\n'
+    if (!validMap){alert("Create links for your image first")}else {
+    document.getElementById('codeWindow').value=mapSource
+    }
+}
+
+
+function puGetScreenSize() {
+    var myWidth = 0, myHeight = 0;
+    if( typeof( window.innerWidth ) == 'number' ) {
+        /*Non-IE*/
+        myWidth = window.innerWidth;
+        myHeight = window.innerHeight;
+    } else if( document.documentElement &&
+        ( document.documentElement.clientWidth || document.documentElement.clientHeight ) ) {
+        /*IE 6+ in 'standards compliant mode'*/
+        myWidth = document.documentElement.clientWidth;
+        myHeight = document.documentElement.clientHeight;
+    } else if( document.body && ( document.body.clientWidth || document.body.clientHeight ) ) {
+        /*IE 4 compatible*/
+        myWidth = document.body.clientWidth;
+        myHeight = document.body.clientHeight;
+    }
+    return [ myWidth, myHeight ];
+}
+
+function puGetScrollXY() {
+    var scrollXamt = 0, scrollYamt = 0;
+    if( typeof( window.pageYOffset ) == 'number' ) {
+        /*Netscape compliant*/
+        scrollYamt = window.pageYOffset;
+        scrollXamt = window.pageXOffset;
+    } else if( document.body && ( document.body.scrollLeft || document.body.scrollTop ) ) {
+        /*DOM compliant*/
+        scrollYamt = document.body.scrollTop;
+        scrollXamt = document.body.scrollLeft;
+    } else if( document.documentElement &&
+        ( document.documentElement.scrollLeft || document.documentElement.scrollTop ) ) {
+        /*IE6 standards compliant mode*/
+        scrollYamt = document.documentElement.scrollTop;
+        scrollXamt = document.documentElement.scrollLeft;
+    }
+    return [ scrollXamt, scrollYamt ];
+}
+
+
+function Preview(displaycode) {
+        var ww = window.open("","popupwindow","width=600,height=350,directories=no,menubar=yes,status=yes,toolbar=yes,resizable=yes,scrollbars=yes,screenY=0,top=0,screenX=80,left=80" );
+          ww.document.writeln("<html><head><title>Preview</title></head><body>" );
+        ww.document.writeln(displaycode);
+        ww.document.writeln("<br clear=both><hr><form><center><input type=\"submit\" value=\"Close Window\" onClick=\"window.close();return false; \"></center></form>" );
+        ww.document.writeln("</body></html>" );
+        ww.document.close() ;
+        if(document.focus){ ww.document.focus(true)}
+}
+
+//------------------
+// initialize
+//------------------
+function init(){
+    document.onmousedown=startMove;
+    document.onmouseup=Function("moveEnabled=false; MovableItem=''");
+    makeWorkspace();
+    for (var i=0; i<maxTiles; i++){ moveObject[i]=document.getElementById('popup'+i)}
+    ActiveSwatch=moveObject[0]
+}
+
+//-->
+</script>
+
+
+<style>
+.intext {width: 380px; height: 24px; 
+    font-family:arial, sans-serif; font-size:12px; padding:3px; xvisibility:hidden;
+}
+.tile     { 
+    position:absolute; border:1px solid silver; background-color:white;
+    filter:alpha(opacity=50); -moz-opacity:0.50; opacity:0.50;
+    font-family:arial, sans-serif; font-size:12px; padding:3px;
+    }
+.links  {position:absolute; left:0px; top:0px; width: 390px; height: 24px; 
+    font-family:arial, sans-serif; font-size:12px; padding:3px; visibility:hidden;
+    }
+.alts     {position:absolute; left:0px; top:30px; width: 390px; height: 24px; 
+    font-family:arial, sans-serif; font-size:12px; padding:3px; visibility:hidden;
+    }
+.toolbtn {width:120px;line-height:20px}
+
+        #content {width: 960px; margin: 0 auto; overflow: hidden;}
+        #content > #main {width: 610px ; float: left; margin-bottom: 10px; padding: 5px; border: 1px solid black;}
+        #content > #side {width: auto; float: right; margin-bottom: 10px; padding: 5px; border: 1px solid black;}
+        #footer {width: 960px; margin: 0 auto; overflow: hidden;}
+
+        #adbox {width: 600px ; margin: 0 auto; float: left;   position: relative;}
+
+</style>
+</head>
+
+<body>
+
+<div id="content">
+    <section id="main">
+    <h1>ImageMapTool</h1>
+        <ol>
+        <li>Enter the image URL and click the Load Image button.<br>
+        <li>Click the New Link button to create a new point area.<br>
+        <li>Enter image URL and image link description.<br>
+        <li>Drag image map above the image to the desired location.<br>
+        <li>Map area size can be set by dragging the box corner.<br>
+        <li>Click the Make Code button to generate map code.<br>
+        <li>You can use the code right away or preview the linked contents by clicking the Preview button.<br>
+        </ol>
+
+        <table cellspacing="1" cellpadding="3" border="0" width=610 bgcolor=999999>
+        <tr bgcolor=white>
+            <td>Image URL</td>
+            <td><input type=text id=imageInput value="https://cdn.pixabay.com/photo/2017/06/12/13/53/follow-us-2395640__340.jpg" class=intext></td>
+            <td><input type=button class=toolbtn value="&larr; Load Image" onclick="loadImage()"></td>
+        </tr>
+        <tr bgcolor=white>
+            <td align=right>Link:<br>Caption:</td>
+            <td><div id=linkbox style="position:relative; top:0px; left:0px; width:400px; height:60px; overflow:hidden;"></div></td>
+            <td>
+                <input type=button class=toolbtn value="New Link" onclick="createTile()"><br> 
+                <input type=button class=toolbtn value="Remove Link" onclick="killTile()">
+            </td>
+        </tr>
+        </table>
+        <p>
+        <!-- adsense1 -->
+        <p>
+            <div id="adbox">
+    
+            </div>
+           
+        </p>
+        <br>
+        <!-- adsense1 -->
+        <table cellpadding=0 cellspacing=0 border=0 width=610>
+        <tr>
+            <td style="border:1px #999999 solid"><div id=workSpace style="position:relative;"></div></td>
+        </tr>
+        </table><br>
+
+
+        <table width=610 cellspacing="2" cellpadding="3" border="0">
+        <tr>
+            <td><input type=button value="Make Code &darr;" onclick="makeMap()"></td>
+            <td align=right><input type=button value="Preview &rarr;" onclick="Preview(document.getElementById('codeWindow').value)"></td>
+        </tr>
+        <tr><td colspan=2><textarea id=codeWindow style="width:610; height:200px; background-color:beige"></textarea></td></tr>
+        </table>
+        <script>init()</script>
+    </section>
+    <!-- adsense2 -->
+    <aside id="side">
+        <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<!-- sstube반응형 - 상단 -->
+<ins class="adsbygoogle"
+     style="display:block"
+     data-ad-client="ca-pub-4249287459658114"
+     data-ad-slot="6088469989"
+     data-ad-format="auto"></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+    </aside>
+    <!-- adsense2 -->
+
+    <footer id="footer">
+    <small> Open source  <a href="http://www.blueb.co.kr/?c=1/18&uid=2818" target="_blank"><b>blueb.co.kr</b></a>
+          / Designed by  <a href="mailto:once9006@gmail.com" target="_blank">once9006@gmail.com</a>. </small>
+    </footer>
+</div>
+</body>
+</html>
